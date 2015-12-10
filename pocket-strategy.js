@@ -77,7 +77,7 @@ function Strategy(options, verify) {
     options.retrive = 'https://getpocket.com/v3/get';
 
     this._options = options;
-    this._verity          = verify;
+    this._verify = verify;
     this._oauth = new OAuth(options);
 
     this.name = 'pocket';
@@ -100,13 +100,14 @@ Strategy.prototype.authenticate = function(req, options) {
             if (err) { return self.error(err); }
             if (!user) { return self.fail(info); }
             req.session.pocketData.info = info;
-
+            ​
             self.success(user, info);
         }
 
         if(req.session.pocketData){
-            self.pass(req.session.pocketData.username, req.session.pocketData.info);
         }else{        
+            req.session.pocketCode = null;
+            self._verify(req, req.session.pocketData.username, req.session.pocketData.accessToken, verified);
             this._oauth.getOAuthAccessToken(req.session.pocketCode, function (err, username, accessToken) {
                 if(err || !username) { self.error(err); return}
                 req.session.pocketData = {
@@ -114,7 +115,7 @@ Strategy.prototype.authenticate = function(req, options) {
                     accessToken : accessToken
                 }
 
-                self._verity(username, accessToken, verified);
+                self._verify(req, username, accessToken, verified);
             });
         }
     }else{
