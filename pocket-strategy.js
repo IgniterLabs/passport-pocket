@@ -100,7 +100,7 @@ Strategy.prototype.authenticate = function(req, options) {
             if (err) { return self.error(err); }
             if (!user) { return self.fail(info); }
             req.session.pocketData.info = info;
-            ​
+            
             self.success(user, info);
         }
 
