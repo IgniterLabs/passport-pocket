@@ -79,15 +79,17 @@ function Strategy(options, verify) {
     this._options = options;
     this._verify = verify;
     this._oauth = new OAuth(options);
-
     this.name = 'pocket';
+
+    //passport.Strategy.call(this);
+
 }
 
 util.inherits(Strategy, passport.Strategy);
 
 Strategy.prototype.authenticate = function(req, options) {
     if (req.query && req.query.denied) {
-        return this.fail();
+      return this.fail();
     }
 
     options = options || {};
@@ -96,36 +98,39 @@ Strategy.prototype.authenticate = function(req, options) {
     var self = this;
 
     if (req.session && req.session.pocketCode) {
+
         function verified(err, user, info) {
-            if (err) { return self.error(err); }
-            if (!user) { return self.fail(info); }
-            req.session.pocketData.info = info;
-            
-            self.success(user, info);
+          if (err) { return self.error(err); }
+          if (!user) { return self.fail(info); }
+          req.session.pocketData.info = info;
+
+          self.success(user, info);
         }
 
         if(req.session.pocketData){
-        }else{        
             req.session.pocketCode = null;
             self._verify(req, req.session.pocketData.username, req.session.pocketData.accessToken, verified);
-            this._oauth.getOAuthAccessToken(req.session.pocketCode, function (err, username, accessToken) {
-                if(err || !username) { self.error(err); return}
-                req.session.pocketData = {
-                    username : username,
-                    accessToken : accessToken
-                }
+            //self.pass(req, req.session.pocketData.username, req.session.pocketData.accessToken);
+        }else{
+          this._oauth.getOAuthAccessToken(req.session.pocketCode, function (err, username, accessToken) {
+            if(err || !username) { self.error(err); return}
 
-                self._verify(req, username, accessToken, verified);
-            });
+            req.session.pocketData = {
+                username : username,
+                accessToken : accessToken
+            }
+
+            self._verify(req, username, accessToken, verified);
+          });
         }
-    }else{
-        this._oauth.getOAuthRequestToken(function (err, code, authUrl) {
-            if(err) { self.error(err)}
+    } else {
+      this._oauth.getOAuthRequestToken(function (err, code, authUrl) {
+        if(err) { self.error(err)}
 
-            req.session.pocketCode = code;
+        req.session.pocketCode = code;
 
-            self.redirect(authUrl);
-        });
+        self.redirect(authUrl);
+      });
     }
 }
 
